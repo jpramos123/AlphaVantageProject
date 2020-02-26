@@ -13,17 +13,8 @@ bp = Blueprint('auth', __name__, url_prefix='/auth')
 @cross_origin(supports_credentials=True)
 def register():
 
-    print("IM INSIDE")
+    user_register = request.get_json()
 
-    user_register = {
-        'userName': request.form['userName'],
-        'firstName' : request.form['firstName'],
-        'lastName': request.form['lastName'],
-        'email' : request.form['email'],
-        'password' : generate_password_hash(request.form['password']),
-        }
-
-    print(user_register['email'])
     error = None
     get_db()
     db = g.db
@@ -36,8 +27,8 @@ def register():
     response = cursor.fetchone()
 
     if response is not None:
-        print("User already exists")
-        return json.dumps({'sucess':False}), 409
+        error = {'sucess':False,"description":"User already exists"}
+        return json.dumps(error), 409
     else:
         registerUser(user_register)
         return json.dumps({'sucess':True}), 200
@@ -73,8 +64,6 @@ def login():
     if error is None:
         session.clear()
         session['user_id'] = user['user_id']
-        print('USER SESSION: ', session['user_id'])
-        print(request.cookies)
         return json.dumps({'success':True}), 200
 
 def registerUser(user_to_register):
@@ -91,7 +80,7 @@ def registerUser(user_to_register):
                                                             user_to_register['firstName'],
                                                             user_to_register['lastName'],
                                                             user_to_register['email'],
-                                                            user_to_register['password']
+                                                            generate_password_hash(user_to_register['password'])
                                                             )
     )
 
